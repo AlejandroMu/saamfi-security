@@ -9,13 +9,11 @@ import java.util.Collections;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import io.jsonwebtoken.Claims;
@@ -26,7 +24,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 
-@Service
+@Component
 public class SaamfiDelegate {
 
     private static final String ROLE_KEYS = "role";
@@ -41,13 +39,15 @@ public class SaamfiDelegate {
 
     private PublicKey publicKey;
 
-    @Value("${saamfi.url}")
     private String saamfiUrl;
 
-    public SaamfiDelegate() {
+    public SaamfiDelegate(String saamfiUrl2) {
         template = new RestTemplate();
+        this.saamfiUrl = saamfiUrl2;
+
         try {
             publicKey = getPublicKey();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -72,6 +72,7 @@ public class SaamfiDelegate {
         final JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(publicKey).build();
         final Jws<Claims> claimsJws = jwtParser.parseClaimsJws(authToken);
         final Claims claims = (Claims) claimsJws.getBody();
+        System.out.println("\nroles: " + claims.get(ROLE_KEYS).toString() + "\n\n");
         Stream<SimpleGrantedAuthority> stream = Arrays.stream(claims.get(ROLE_KEYS).toString().split(","))
                 .map(SimpleGrantedAuthority::new);
         Collection<SimpleGrantedAuthority> authorities = null;
@@ -103,7 +104,7 @@ public class SaamfiDelegate {
         return false;
     }
 
-    public UsernamePasswordAuthenticationToken getAuthentication(String authToken, Authentication authentication,
+    public UsernamePasswordAuthenticationToken getAuthentication(String authToken,
             UserDetails userDetails) {
 
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
@@ -112,7 +113,15 @@ public class SaamfiDelegate {
 
     public PublicKey getPublicKey() throws Exception {
         String key = template.getForEntity(saamfiUrl + "/public/publicKey", String.class).getBody();
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(key.getBytes());
+        key = key.replace("[", "");
+        key = key.replace("]", "");
+        String split[] = key.split(",");
+        byte[] bytes = new byte[split.length];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = Byte.parseByte(split[i].trim());
+
+        }
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePublic(spec);
 

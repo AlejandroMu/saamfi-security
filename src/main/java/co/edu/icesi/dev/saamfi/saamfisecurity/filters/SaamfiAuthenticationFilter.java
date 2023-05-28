@@ -9,8 +9,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -33,14 +31,17 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 	 */
 	public static final String TOKEN_PREFIX = "Bearer";
 
-	@Autowired
 	private SaamfiDelegate delegate;
 
-	@Value("${saamfi.system.id}")
-	private String systemId;
+	private long systemId;
 
-	@Value("${saamfi.institution.id}")
-	private String institution;
+	private long institution;
+
+	public SaamfiAuthenticationFilter(String saamfiUrl, long systemId, long institution) {
+		this.systemId = systemId;
+		this.institution = institution;
+		delegate = new SaamfiDelegate(saamfiUrl);
+	}
 
 	/**
 	 * provider of JWT methods
@@ -52,12 +53,14 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 		String header = request.getHeader(HEADER_STRING);
 		String username = null;
 		String authToken = null;
+
 		long sysid = 1;
 		long instid = 1;
 
 		boolean tokenValid = false;
 		if (header != null && !header.equals("Bearer undefined") && header.startsWith(TOKEN_PREFIX)) {
-			authToken = header.replace(TOKEN_PREFIX, "");
+			authToken = header.replace(TOKEN_PREFIX, "").trim();
+			System.out.println("\n\ntoken: " + authToken + "\n\n");
 			if (!authToken.trim().equals("null")) {
 				if (delegate.validateToken(authToken)) {
 					username = delegate.getUsernameFromJWT(authToken);
@@ -71,16 +74,15 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 			logger.warn("couldn't find bearer string, will ignore the header");
 		}
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (tokenValid && username != null && auth == null && sysid == Integer.parseInt(systemId)
-				&& instid == Integer.parseInt(institution)) {
+		if (tokenValid && username != null && auth == null && sysid == systemId
+				&& instid == institution) {
 			Collection<SimpleGrantedAuthority> roles = delegate.getRolesFromJWT(authToken);
 			if (roles == null) {
 				roles = Collections.emptyList();
 			}
 			UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "", roles);
 
-			UsernamePasswordAuthenticationToken authentication = delegate.getAuthentication(authToken,
-					SecurityContextHolder.getContext().getAuthentication(), userDetails);
+			UsernamePasswordAuthenticationToken authentication = delegate.getAuthentication(authToken, userDetails);
 			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 			logger.info("usr:" + username + ", module auth, path:" + request.getServletPath());
 			SecurityContextHolder.getContext().setAuthentication(authentication);
