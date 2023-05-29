@@ -17,12 +17,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.UnsupportedJwtException;
 
 @Component
 public class SaamfiDelegate {
@@ -85,23 +82,10 @@ public class SaamfiDelegate {
     }
 
     public boolean validateToken(String authToken) {
-        try {
 
-            Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken);
-            return true;
+        Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken);
+        return true;
 
-        } catch (MalformedJwtException ex) {
-            System.out.println("Invalid JWT token");
-        } catch (ExpiredJwtException ex) {
-            System.out.println("Expired JWT token");
-        } catch (UnsupportedJwtException ex) {
-            System.out.println("Unsupported JWT token");
-        } catch (IllegalArgumentException ex) {
-            System.out.println("JWT claims string is empty.");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     public UsernamePasswordAuthenticationToken getAuthentication(String authToken,

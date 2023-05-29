@@ -3,12 +3,14 @@ package co.edu.icesi.dev.saamfi.saamfisecurity.filters;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.simple.JSONObject;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -62,13 +64,19 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 			authToken = header.replace(TOKEN_PREFIX, "").trim();
 			System.out.println("\n\ntoken: " + authToken + "\n\n");
 			if (!authToken.trim().equals("null")) {
-				if (delegate.validateToken(authToken)) {
-					username = delegate.getUsernameFromJWT(authToken);
-					sysid = delegate.getSysIdFromJWT(authToken);
-					instid = delegate.getInstIdFromJWT(authToken);
+				try {
+					if (delegate.validateToken(authToken)) {
+						username = delegate.getUsernameFromJWT(authToken);
+						sysid = delegate.getSysIdFromJWT(authToken);
+						instid = delegate.getInstIdFromJWT(authToken);
 
-					tokenValid = true;
+						tokenValid = true;
+					}
+				} catch (Exception e) {
+					manageTokenInvalid(e, response);
+					return;
 				}
+
 			}
 		} else {
 			logger.warn("couldn't find bearer string, will ignore the header");
@@ -91,6 +99,20 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 
 		filterChain.doFilter(request, response);
 
+	}
+
+	private void manageTokenInvalid(Exception exception, HttpServletResponse response) {
+		response.setContentType("application/json;charset=UTF-8");
+		HashMap<String, String> responseBo = new HashMap<String, String>();
+		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		responseBo.put("message", exception.getMessage());
+
+		JSONObject responseJson = new JSONObject(responseBo);
+		try {
+			response.getWriter().write(responseJson.toJSONString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
