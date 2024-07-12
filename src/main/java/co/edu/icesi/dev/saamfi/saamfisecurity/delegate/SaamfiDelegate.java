@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import co.edu.icesi.dev.saamfi.saamfisecurity.filters.UserDetailToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtParser;
@@ -31,6 +32,8 @@ public class SaamfiDelegate {
     private static final String SYSTEM_CLAIM = "system";
 
     private static final String USERNAME_CLAIM = "username";
+
+    private static final String ID_CLAIM = "persId";
 
     private RestTemplate template;
 
@@ -48,6 +51,14 @@ public class SaamfiDelegate {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public long getUserIdFromJWT(String authToken) {
+
+        Claims claims = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken).getBody();
+        long userId = (long) claims.get(ID_CLAIM);
+
+        return userId;
     }
 
     public String getUsernameFromJWT(String authToken) {
@@ -69,7 +80,6 @@ public class SaamfiDelegate {
         final JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(publicKey).build();
         final Jws<Claims> claimsJws = jwtParser.parseClaimsJws(authToken);
         final Claims claims = (Claims) claimsJws.getBody();
-        System.out.println("\nroles: " + claims.get(ROLE_KEYS).toString() + "\n\n");
         Stream<SimpleGrantedAuthority> stream = Arrays.stream(claims.get(ROLE_KEYS).toString().split(","))
                 .map(SimpleGrantedAuthority::new);
         Collection<SimpleGrantedAuthority> authorities = null;
@@ -81,10 +91,14 @@ public class SaamfiDelegate {
         return authorities;
     }
 
-    public boolean validateToken(String authToken) {
-
-        Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken);
-        return true;
+    public UserDetailToken validateToken(String authToken) {
+        UserDetailToken userDetailToken = null;
+        final Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken);
+        final Claims claims = (Claims) claimsJws.getBody();
+        userDetailToken = new UserDetailToken(claims.get(USERNAME_CLAIM).toString(),
+                (int) claims.get(INSTITUTION_CLAIM), (int) claims.get(SYSTEM_CLAIM), claims.get(ID_CLAIM).toString(),
+                getRolesFromJWT(authToken));
+        return userDetailToken;
 
     }
 

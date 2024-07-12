@@ -1,8 +1,6 @@
 package co.edu.icesi.dev.saamfi.saamfisecurity.filters;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 
 import javax.servlet.FilterChain;
@@ -13,9 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -53,25 +49,14 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 		String header = request.getHeader(HEADER_STRING);
-		String username = null;
 		String authToken = null;
 
-		long sysid = 1;
-		long instid = 1;
-
-		boolean tokenValid = false;
+		UserDetailToken userDetailToken = null;
 		if (header != null && !header.equals("Bearer undefined") && header.startsWith(TOKEN_PREFIX)) {
 			authToken = header.replace(TOKEN_PREFIX, "").trim();
-			System.out.println("\n\ntoken: " + authToken + "\n\n");
 			if (!authToken.trim().equals("null")) {
 				try {
-					if (delegate.validateToken(authToken)) {
-						username = delegate.getUsernameFromJWT(authToken);
-						sysid = delegate.getSysIdFromJWT(authToken);
-						instid = delegate.getInstIdFromJWT(authToken);
-
-						tokenValid = true;
-					}
+					userDetailToken = delegate.validateToken(authToken);
 				} catch (Exception e) {
 					manageTokenInvalid(e, response);
 					return;
@@ -82,17 +67,10 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 			logger.warn("couldn't find bearer string, will ignore the header");
 		}
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (tokenValid && username != null && auth == null && sysid == systemId
-				&& instid == institution) {
-			Collection<SimpleGrantedAuthority> roles = delegate.getRolesFromJWT(authToken);
-			if (roles == null) {
-				roles = Collections.emptyList();
-			}
-			UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "", roles);
-
-			UsernamePasswordAuthenticationToken authentication = delegate.getAuthentication(authToken, userDetails);
+		if (userDetailToken != null && auth == null && userDetailToken.getSystem() == systemId && userDetailToken.getInstitution() == institution) {
+			UsernamePasswordAuthenticationToken authentication = delegate.getAuthentication(authToken, userDetailToken);
 			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-			logger.info("usr:" + username + ", module auth, path:" + request.getServletPath());
+			logger.info("usr:" + userDetailToken + ", module auth, path:" + request.getServletPath());
 			SecurityContextHolder.getContext().setAuthentication(authentication);
 
 		}
@@ -105,8 +83,8 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 		response.setContentType("application/json;charset=UTF-8");
 		HashMap<String, String> responseBo = new HashMap<String, String>();
 		response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		responseBo.put("message", exception.getMessage());
-
+		responseBo.put("message", exception.fillInStackTrace().toString());
+		exception.printStackTrace();
 		JSONObject responseJson = new JSONObject(responseBo);
 		try {
 			response.getWriter().write(responseJson.toJSONString());
