@@ -1,4 +1,4 @@
-package co.edu.icesi.dev.saamfi.saamfisecurity.filters;
+package co.edu.icesi.dev.saamfi.saamfisecurity.entities;
 
 import java.util.Collection;
 

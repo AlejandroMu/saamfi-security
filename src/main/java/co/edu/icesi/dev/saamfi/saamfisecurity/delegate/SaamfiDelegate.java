@@ -6,24 +6,28 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import co.edu.icesi.dev.saamfi.saamfisecurity.filters.UserDetailToken;
+import co.edu.icesi.dev.saamfi.saamfisecurity.entities.LoginBody;
+import co.edu.icesi.dev.saamfi.saamfisecurity.entities.LoginResponse;
+import co.edu.icesi.dev.saamfi.saamfisecurity.entities.UserDetailToken;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 
-@Component
 public class SaamfiDelegate {
+
+    private static Logger logger = Logger.getLogger(SaamfiDelegate.class.getName());
 
     private static final String ROLE_KEYS = "role";
 
@@ -41,9 +45,15 @@ public class SaamfiDelegate {
 
     private String saamfiUrl;
 
-    public SaamfiDelegate(String saamfiUrl2) {
+    private long systemId;
+
+    private long institution;
+
+    public SaamfiDelegate(String saamfiUrl2, long systemId, long institution) {
         template = new RestTemplate();
         this.saamfiUrl = saamfiUrl2;
+        this.systemId = systemId;
+        this.institution = institution;
 
         try {
             publicKey = getPublicKey();
@@ -51,29 +61,6 @@ public class SaamfiDelegate {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public long getUserIdFromJWT(String authToken) {
-
-        Claims claims = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken).getBody();
-        long userId = (long) claims.get(ID_CLAIM);
-
-        return userId;
-    }
-
-    public String getUsernameFromJWT(String authToken) {
-
-        Claims claims = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken).getBody();
-        String username = (String) claims.get(USERNAME_CLAIM);
-
-        return username;
-    }
-
-    public long getSysIdFromJWT(String authToken) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken).getBody();
-        int instId = (int) claims.get(SYSTEM_CLAIM);
-
-        return instId;
     }
 
     public Collection<SimpleGrantedAuthority> getRolesFromJWT(String authToken) {
@@ -125,10 +112,17 @@ public class SaamfiDelegate {
 
     }
 
-    public long getInstIdFromJWT(String authToken) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken).getBody();
-        int instId = (int) claims.get(INSTITUTION_CLAIM);
-
-        return instId;
+    public String getTokenByUser(String username, String password) {
+        try{
+            ResponseEntity<?> response = template.postForEntity(saamfiUrl + "/public/institutions/"+institution+"/systems/"+systemId+"/users/login", new LoginBody(username, password),LoginResponse.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                LoginResponse loginResponse = (LoginResponse) response.getBody();
+                return loginResponse.getAccessToken();
+            }
+        }catch(Exception e){
+            logger.warning("Error in the request: " + e.getMessage());
+        }
+        return null;
     }
+
 }

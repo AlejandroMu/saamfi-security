@@ -16,6 +16,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import co.edu.icesi.dev.saamfi.saamfisecurity.delegate.SaamfiDelegate;
+import co.edu.icesi.dev.saamfi.saamfisecurity.entities.UserDetailToken;
 
 public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 
@@ -38,7 +39,11 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 	public SaamfiAuthenticationFilter(String saamfiUrl, long systemId, long institution) {
 		this.systemId = systemId;
 		this.institution = institution;
-		delegate = new SaamfiDelegate(saamfiUrl);
+		delegate = new SaamfiDelegate(saamfiUrl, systemId, institution);
+	}
+
+	public SaamfiDelegate getDelegate() {
+		return delegate;
 	}
 
 	/**
