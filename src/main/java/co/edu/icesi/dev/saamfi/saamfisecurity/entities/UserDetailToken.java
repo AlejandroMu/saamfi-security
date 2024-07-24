@@ -9,14 +9,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class UserDetailToken implements UserDetails {
     
     private String username;
-    private int institution;
     private int system;
     private String persId;
     private Collection<SimpleGrantedAuthority> roles;
 
-    public UserDetailToken(String username, int institution, int system, String persId, Collection<SimpleGrantedAuthority> roles) {
+    public UserDetailToken(String username, int system, String persId, Collection<SimpleGrantedAuthority> roles) {
         this.username = username;
-        this.institution = institution;
         this.system = system;
         this.persId = persId;
         this.roles = roles;
@@ -51,10 +49,6 @@ public class UserDetailToken implements UserDetails {
         return true;
     }
 
-    public int getInstitution() {
-        return institution;
-    }
-
     public int getSystem() {
         return system;
     }
@@ -65,7 +59,7 @@ public class UserDetailToken implements UserDetails {
 
     @Override
     public String toString() {
-        return "UserDetailToken [institution=" + institution + ", persId=" + persId + ", roles=" + roles + ", system="
+        return "UserDetailToken [persId=" + persId + ", roles=" + roles + ", system="
                 + system + ", username=" + username + "]";
     }
 

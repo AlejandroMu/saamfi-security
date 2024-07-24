@@ -31,8 +31,6 @@ public class SaamfiDelegate {
 
     private static final String ROLE_KEYS = "role";
 
-    private static final String INSTITUTION_CLAIM = "institution";
-
     private static final String SYSTEM_CLAIM = "system";
 
     private static final String USERNAME_CLAIM = "username";
@@ -47,13 +45,10 @@ public class SaamfiDelegate {
 
     private long systemId;
 
-    private long institution;
-
-    public SaamfiDelegate(String saamfiUrl2, long systemId, long institution) {
+    public SaamfiDelegate(String saamfiUrl2, long systemId) {
         template = new RestTemplate();
         this.saamfiUrl = saamfiUrl2;
         this.systemId = systemId;
-        this.institution = institution;
 
         try {
             publicKey = getPublicKey();
@@ -83,7 +78,7 @@ public class SaamfiDelegate {
         final Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken);
         final Claims claims = (Claims) claimsJws.getBody();
         userDetailToken = new UserDetailToken(claims.get(USERNAME_CLAIM).toString(),
-                (int) claims.get(INSTITUTION_CLAIM), (int) claims.get(SYSTEM_CLAIM), claims.get(ID_CLAIM).toString(),
+                (int) claims.get(SYSTEM_CLAIM), claims.get(ID_CLAIM).toString(),
                 getRolesFromJWT(authToken));
         return userDetailToken;
 
@@ -114,7 +109,7 @@ public class SaamfiDelegate {
 
     public String getTokenByUser(String username, String password) {
         try{
-            ResponseEntity<?> response = template.postForEntity(saamfiUrl + "/public/institutions/"+institution+"/systems/"+systemId+"/users/login", new LoginBody(username, password),LoginResponse.class);
+            ResponseEntity<?> response = template.postForEntity(saamfiUrl + "/public/authentication/login", new LoginBody(username, password, systemId),LoginResponse.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 LoginResponse loginResponse = (LoginResponse) response.getBody();
                 return loginResponse.getAccessToken();

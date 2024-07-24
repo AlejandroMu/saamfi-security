@@ -34,12 +34,9 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 
 	private long systemId;
 
-	private long institution;
-
-	public SaamfiAuthenticationFilter(String saamfiUrl, long systemId, long institution) {
+	public SaamfiAuthenticationFilter(String saamfiUrl, long systemId) {
 		this.systemId = systemId;
-		this.institution = institution;
-		delegate = new SaamfiDelegate(saamfiUrl, systemId, institution);
+		delegate = new SaamfiDelegate(saamfiUrl, systemId);
 	}
 
 	public SaamfiDelegate getDelegate() {
@@ -72,7 +69,7 @@ public class SaamfiAuthenticationFilter extends OncePerRequestFilter {
 			logger.warn("couldn't find bearer string, will ignore the header");
 		}
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (userDetailToken != null && auth == null && userDetailToken.getSystem() == systemId && userDetailToken.getInstitution() == institution) {
+		if (userDetailToken != null && auth == null && userDetailToken.getSystem() == systemId) {
 			UsernamePasswordAuthenticationToken authentication = delegate.getAuthentication(authToken, userDetailToken);
 			authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 			logger.info("usr:" + userDetailToken + ", module auth, path:" + request.getServletPath());

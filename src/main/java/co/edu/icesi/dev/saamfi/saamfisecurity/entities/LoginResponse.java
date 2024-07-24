@@ -1,82 +1,73 @@
 package co.edu.icesi.dev.saamfi.saamfisecurity.entities;
 
 public class LoginResponse {
-    private long userId;
-	private String userUsername;
-	private String userExtId;
-	private String userEmail;
-	private String userPhone;
-	private String userName;
-	private String userLastname;
-	private String userDocumentId;
+    private long id;
+	private String username;
+	private String email;
+	private String phone;
+	private String name;
+	private String lastname;
+	private String documentId;
 
 	private String accessToken;
 	private String tokenType;
 
 	private String systemHomePage;
 
-    public long getUserId() {
-        return userId;
+    public long getId() {
+        return id;
     }
 
-    public void setUserId(long userId) {
-        this.userId = userId;
+    public void setId(long userId) {
+        this.id = userId;
     }
 
-    public String getUserUsername() {
-        return userUsername;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserUsername(String userUsername) {
-        this.userUsername = userUsername;
+    public void setUsername(String userUsername) {
+        this.username = userUsername;
     }
 
-    public String getUserExtId() {
-        return userExtId;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUserExtId(String userExtId) {
-        this.userExtId = userExtId;
+    public void setEmail(String userEmail) {
+        this.email = userEmail;
     }
 
-    public String getUserEmail() {
-        return userEmail;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
+    public void setPhone(String userPhone) {
+        this.phone = userPhone;
     }
 
-    public String getUserPhone() {
-        return userPhone;
+    public String getName() {
+        return name;
     }
 
-    public void setUserPhone(String userPhone) {
-        this.userPhone = userPhone;
+    public void setName(String userName) {
+        this.name = userName;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getLastname() {
+        return lastname;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setLastname(String userLastname) {
+        this.lastname = userLastname;
     }
 
-    public String getUserLastname() {
-        return userLastname;
+    public String getDocumentId() {
+        return documentId;
     }
 
-    public void setUserLastname(String userLastname) {
-        this.userLastname = userLastname;
-    }
-
-    public String getUserDocumentId() {
-        return userDocumentId;
-    }
-
-    public void setUserDocumentId(String userDocumentId) {
-        this.userDocumentId = userDocumentId;
+    public void setDocumentId(String userDocumentId) {
+        this.documentId = userDocumentId;
     }
 
     public String getAccessToken() {
