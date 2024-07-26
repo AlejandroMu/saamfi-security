@@ -9,7 +9,11 @@ import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.List;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -115,6 +119,21 @@ public class SaamfiDelegate {
                 return loginResponse.getAccessToken();
             }
         }catch(Exception e){
+            logger.warning("Error in the request: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public String getUsersFromList(String authToken, List<Long> users) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(authToken);
+            HttpEntity<List<Long>> entity = new HttpEntity<>(users, headers);
+            ResponseEntity<String> response = template.exchange(saamfiUrl + "/users/users-from-list", HttpMethod.POST, entity, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return (String) response.getBody();
+            }
+        } catch (Exception e) {
             logger.warning("Error in the request: " + e.getMessage());
         }
         return null;
