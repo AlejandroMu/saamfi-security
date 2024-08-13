@@ -6,10 +6,10 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.List;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -111,12 +111,12 @@ public class SaamfiDelegate {
 
     }
 
-    public String getTokenByUser(String username, String password) {
+    public LoginResponse getLoginResponseUserFromSaamfi(String username, String password) {
         try{
             ResponseEntity<?> response = template.postForEntity(saamfiUrl + "/public/authentication/login", new LoginBody(username, password, systemId),LoginResponse.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 LoginResponse loginResponse = (LoginResponse) response.getBody();
-                return loginResponse.getAccessToken();
+                return loginResponse;
             }
         }catch(Exception e){
             logger.warning("Error in the request: " + e.getMessage());
