@@ -139,4 +139,19 @@ public class SaamfiDelegate {
         return null;
     }
 
+    public String getUsersByInstId(String authToken, long instId) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(authToken);
+            HttpEntity<Long> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> response = template.exchange(saamfiUrl + "/users?instid=" + instId, HttpMethod.GET, entity, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return (String) response.getBody();
+            }
+        } catch (Exception e) {
+            logger.warning("Error in the request: " + e.getMessage());
+        }
+        return null;
+    }
+
 }
