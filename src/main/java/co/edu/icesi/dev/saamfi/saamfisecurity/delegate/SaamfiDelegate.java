@@ -7,13 +7,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -154,4 +157,40 @@ public class SaamfiDelegate {
         return null;
     }
 
+    /**
+     * Return the list of users filtered by the given filter.
+     * 
+     * @param token The token of the user.
+     * @param interviewers The list of interviewers documents.
+     * @return The list of users.
+     * @throws Exception 
+     */
+    public List<Map<String, Object>> getUsersByDocument(String token, List<String> userDocuments) throws Exception {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(token);
+
+            HttpEntity<?> entity = new HttpEntity<>(userDocuments, headers);
+
+            ResponseEntity<List<Map<String, Object>>> response = this.template.exchange(
+                this.saamfiUrl + "/users/users-from-document",
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<List<Map<String, Object>>>() {}
+            );
+
+            
+            if (response.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                throw new RuntimeException("Error al autenticar");
+            } else if (response.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Error");
+            }
+
+            List<Map<String, Object>> responseBody = response.getBody();
+
+            return responseBody != null ? responseBody : Collections.emptyList();
+        } catch(Exception e) {
+            throw e;
+        }
+    }
 }
