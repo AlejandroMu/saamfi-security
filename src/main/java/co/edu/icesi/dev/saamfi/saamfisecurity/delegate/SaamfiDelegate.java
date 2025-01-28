@@ -24,6 +24,7 @@ import org.springframework.web.client.RestTemplate;
 import co.edu.icesi.dev.saamfi.saamfisecurity.entities.LoginBody;
 import co.edu.icesi.dev.saamfi.saamfisecurity.entities.LoginResponse;
 import co.edu.icesi.dev.saamfi.saamfisecurity.entities.UserDetailToken;
+import co.edu.icesi.dev.saamfi.saamfisecurity.entities.UserInfo;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtParser;
@@ -147,6 +148,21 @@ public class SaamfiDelegate {
             ResponseEntity<String> response = template.exchange(saamfiUrl + "/users?param=" + param + "&value=" + value, HttpMethod.GET, entity, String.class);
             if (response.getStatusCode().is2xxSuccessful()) {
                 return (String) response.getBody();
+            }
+        } catch (Exception e) {
+            logger.warning("Error in the request: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public UserInfo getUserInfo(String authToken, long userid) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(authToken);
+            HttpEntity<Long> entity = new HttpEntity<>(headers);
+            ResponseEntity<UserInfo> response = template.exchange(saamfiUrl + "/users/" + userid, HttpMethod.GET, entity, UserInfo.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return (UserInfo) response.getBody();
             }
         } catch (Exception e) {
             logger.warning("Error in the request: " + e.getMessage());
