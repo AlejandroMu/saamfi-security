@@ -162,7 +162,7 @@ public class SaamfiDelegate {
      * Return the list of users filtered by the given filter.
      * 
      * @param token The token of the user.
-     * @param interviewers The list of interviewers documents.
+     * @param userDocuments The list of user documents.
      * @return The list of users.
      * @throws Exception 
      */
@@ -194,6 +194,36 @@ public class SaamfiDelegate {
             throw e;
         }
     }
+
+    public Map<String, Object> getUserByUsername(String token, String username) throws Exception {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(token);
+
+            HttpEntity<?> entity = new HttpEntity<>(username, headers);
+
+            ResponseEntity<Map<String, Object>> response = this.template.exchange(
+                this.saamfiUrl + "/users/user-from-username",
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            
+            if (response.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                throw new RuntimeException("Error al autenticar");
+            } else if (response.getStatusCode() != HttpStatus.OK) {
+                throw new RuntimeException("Error");
+            }
+
+            Map<String, Object> responseBody = response.getBody();
+
+            return responseBody != null ? responseBody : Collections.emptyMap();
+        } catch(Exception e) {
+            throw e;
+        }
+    }
+
     public UserInfo getUserInfo(String authToken, long userid) {
         try {
             HttpHeaders headers = new HttpHeaders();
