@@ -67,7 +67,7 @@ public class SaamfiDelegate {
     }
 
     public Collection<SimpleGrantedAuthority> getRolesFromJWT(String authToken) {
-        final JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(publicKey).build();
+        final JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(getPublicKey()).build();
         final Jws<Claims> claimsJws = jwtParser.parseClaimsJws(authToken);
         final Claims claims = (Claims) claimsJws.getBody();
         Stream<SimpleGrantedAuthority> stream = Arrays.stream(claims.get(ROLE_KEYS).toString().split(","))
@@ -83,7 +83,7 @@ public class SaamfiDelegate {
 
     public UserDetailToken validateToken(String authToken) {
         UserDetailToken userDetailToken = null;
-        final Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(publicKey).build().parseClaimsJws(authToken);
+        final Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(getPublicKey()).build().parseClaimsJws(authToken);
         final Claims claims = (Claims) claimsJws.getBody();
         userDetailToken = new UserDetailToken(claims.get(USERNAME_CLAIM).toString(),
                 (int) claims.get(SYSTEM_CLAIM), claims.get(ID_CLAIM).toString(),
@@ -99,19 +99,28 @@ public class SaamfiDelegate {
         return new UsernamePasswordAuthenticationToken(userDetails, authToken.trim(), authorities);
     }
 
-    public PublicKey getPublicKey() throws Exception {
-        String key = template.getForEntity(saamfiUrl + "/public/publicKey", String.class).getBody();
-        key = key.replace("[", "");
-        key = key.replace("]", "");
-        String split[] = key.split(",");
-        byte[] bytes = new byte[split.length];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = Byte.parseByte(split[i].trim());
-
+    public PublicKey getPublicKey(){
+        if(publicKey != null){
+            return publicKey;
         }
-        X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        return kf.generatePublic(spec);
+        try{
+            String key = template.getForEntity(saamfiUrl + "/public/publicKey", String.class).getBody();
+            key = key.replace("[", "");
+            key = key.replace("]", "");
+            String split[] = key.split(",");
+            byte[] bytes = new byte[split.length];
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = Byte.parseByte(split[i].trim());
+    
+            }
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            publicKey = kf.generatePublic(spec);
+            return publicKey;
+        }catch(Exception e){
+            logger.warning("Error in the request: " + e.getMessage());
+            throw new RuntimeException("Error getting public key " + e.getMessage());
+        }
 
     }
 
