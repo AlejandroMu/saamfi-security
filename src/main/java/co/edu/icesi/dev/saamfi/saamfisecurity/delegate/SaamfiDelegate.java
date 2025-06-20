@@ -224,4 +224,19 @@ public class SaamfiDelegate {
         return null;
     }
 
+    public String getAllInstitutions (String authToken, String institutionIdsEncoded) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(authToken);
+            HttpEntity<Long> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> response = template.exchange(saamfiUrl + "/institutions?institutionIds=" + institutionIdsEncoded, HttpMethod.GET, entity, String.class);
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return (String) response.getBody();
+            }
+        } catch (Exception e) {
+            logger.warning("Error in the request: " + e.getMessage());
+        }
+        return null;
+    }
+
 }
