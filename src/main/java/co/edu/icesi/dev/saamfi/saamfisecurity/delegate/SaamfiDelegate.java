@@ -66,10 +66,7 @@ public class SaamfiDelegate {
         }
     }
 
-    public Collection<SimpleGrantedAuthority> getRolesFromJWT(String authToken) {
-        final JwtParser jwtParser = Jwts.parserBuilder().setSigningKey(getPublicKey()).build();
-        final Jws<Claims> claimsJws = jwtParser.parseClaimsJws(authToken);
-        final Claims claims = (Claims) claimsJws.getBody();
+    public Collection<SimpleGrantedAuthority> getRolesFromClaims(Claims claims) {
         Stream<SimpleGrantedAuthority> stream = Arrays.stream(claims.get(ROLE_KEYS).toString().split(","))
                 .map(SimpleGrantedAuthority::new);
         Collection<SimpleGrantedAuthority> authorities = null;
@@ -83,13 +80,15 @@ public class SaamfiDelegate {
 
     public UserDetailToken validateToken(String authToken) {
         UserDetailToken userDetailToken = null;
-        final Jws<Claims> claimsJws = Jwts.parserBuilder().setSigningKey(getPublicKey()).build().parseClaimsJws(authToken);
-        final Claims claims = (Claims) claimsJws.getBody();
+        Claims claims = Jwts.parser()
+            .verifyWith(getPublicKey())
+            .build()
+            .parseSignedClaims(authToken)
+            .getPayload();
         userDetailToken = new UserDetailToken(claims.get(USERNAME_CLAIM).toString(),
                 (int) claims.get(SYSTEM_CLAIM), claims.get(ID_CLAIM).toString(),
-                getRolesFromJWT(authToken));
+                getRolesFromClaims(claims));
         return userDetailToken;
-
     }
 
     public UsernamePasswordAuthenticationToken getAuthentication(String authToken,
